@@ -1,11 +1,17 @@
-﻿Imports System.IO
+﻿Imports System
+Imports System.IO
 Imports System.Net
 
+Imports ASQS
+Imports ASQS.FileData
+
 Public Class Form1
+    Private WithEvents MC As New ASQS.ManagerClass
     Dim Phase As Integer = 0
     Dim Counter1 As Integer = 0 'Successfully downloaded images
     Dim Counter2 As Integer = 0 'Skipped downloads (same name or already exists)
     Dim Counter4 As Integer = 0 'Error
+    Dim objWriter As System.IO.StreamWriter
 
     Private Sub btnHash_Click(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles btnHash.Click
         With OpenFileDialog1
@@ -51,6 +57,7 @@ Public Class Form1
                     obj.Close()
                     Label12.Text = count
 
+
                     BackgroundWorker1.RunWorkerAsync()
                 End If
             Case "CANCEL"
@@ -76,21 +83,9 @@ Public Class Form1
             Case 0 'CityVille
                 My.Settings.HashCV = tbHash.Text
                 My.Settings.DestCV = tbDest.Text
-            Case 1 'Empires & Allies
-                My.Settings.HashEA = tbHash.Text
-                My.Settings.DestEA = tbDest.Text
-            Case 2 'Treasure Isle
-                My.Settings.HashTI = tbHash.Text
-                My.Settings.DestTI = tbDest.Text
             Case 3 'FarmVille
                 My.Settings.HashFV = tbHash.Text
                 My.Settings.DestFV = tbDest.Text
-            Case 4 'Adventure World
-                My.Settings.HashAW = tbHash.Text
-                My.Settings.DestAW = tbDest.Text
-            Case 5 'Mafia Wars 2
-                My.Settings.HashMW2 = tbHash.Text
-                My.Settings.DestMW2 = tbDest.Text
             Case 6 'CastleVille
                 My.Settings.HashCaV = tbHash.Text
                 My.Settings.DestCaV = tbDest.Text
@@ -107,26 +102,21 @@ Public Class Form1
         My.Settings.Save()
     End Sub
 
+    Private Sub BackgroundWorker1_Disposed(ByVal sender As Object, ByVal e As System.EventArgs) Handles BackgroundWorker1.Disposed
+        Finish()
+    End Sub
+
     Private Sub BackgroundWorker1_DoWork(ByVal sender As System.Object, ByVal e As System.ComponentModel.DoWorkEventArgs) Handles BackgroundWorker1.DoWork
+        MC.MaxDownloads = 20
+        MC.AutoDownload = True
+
         'CityVille
         Dim cv_url As String = "http://assets.cityville.zynga.com/hashed/"
         Dim cv_url2 As String = "https://zynga1-a.akamaihd.net/city/static/"
         Dim cv_destprefix As String = "CityVille\"
-        'Empires & Allies       old: http://assets.empire.zynga.com/assets/hashed/ 
-        Dim ea_url As String = "http://empire-zc.static.zgncdn.com/assets/hashed/"
-        Dim ea_destprefix As String = "Empire & Allies\"
-        'Treasure Isle
-        Dim ti_url As String = "http://assets.treasure.zynga.com/prod/hashed/"
-        Dim ti_destprefix As String = "Treasure Isle\"
         'FarmVille              old: http://static-0.farmville.com/admin-beta/hashed/")
         Dim fv_url As String = "http://static-0.farmville.zgncdn.com/assets/hashed/"
         Dim fv_destprefix As String = "FarmVille\"
-        'Adventure World (new game)
-        Dim aw_url As String = "http://assets.adventure-zc.zgncdn.com/hashed/"
-        Dim aw_destprefix As String = "Adventure World\"
-        'Mafia Wars 2
-        Dim mw2_url As String = "http://mw2.static.zgncdn.com/hashed/"
-        Dim mw2_destprefix As String = "Mafia Wars 2\"
         'CastleVille
         Dim cav_url As String = "http://assets.castle.zgncdn.com/hashed/"
         Dim cav_destprefix As String = "CastleVille\"
@@ -144,21 +134,9 @@ Public Class Form1
             Case 0 'CityVille
                 sel_url = cv_url
                 sel_destprefix = cv_destprefix
-            Case 1 'Empires & Allies
-                sel_url = ea_url
-                sel_destprefix = ea_destprefix
-            Case 2 'Treasure Isle
-                sel_url = ti_url
-                sel_destprefix = ti_destprefix
             Case 3 'FarmVille
                 sel_url = fv_url
                 sel_destprefix = fv_destprefix
-            Case 4 'Adventure World
-                sel_url = aw_url
-                sel_destprefix = aw_destprefix
-            Case 5 'Mafia Wars 2
-                sel_url = mw2_url
-                sel_destprefix = mw2_destprefix
             Case 6 'CastleVille
                 sel_url = cav_url
                 sel_destprefix = cav_destprefix
@@ -170,6 +148,11 @@ Public Class Form1
         End Select
 
         Dim Root As String = tbDest.Text & "\" & sel_destprefix
+        If Not Directory.Exists(Root) Then  'If directory does not exist,
+            Directory.CreateDirectory(Root) 'it will be created.
+        End If
+
+        objWriter = New System.IO.StreamWriter(tbDest.Text & "\" & sel_destprefix & "\error.log")
 
         Dim srFileReader As StreamReader
         Dim sInputLine As String
@@ -194,17 +177,17 @@ Public Class Form1
                 Continue Do
             End If
 
-            Dim ext As String = sInputLine.Split(".").Last
+            Dim ext As String = IIf(sInputLine.Contains("."), sInputLine.Split(".").Last, "")
             If image_extensions.Contains(ext) Or Not My.Settings.OnlyImages Then
                 Dim parts As String()
                 Dim target As String
                 Dim source As String
                 Select Case My.Settings.GameIndex
-                    Case 0 To 2, 4 To 7 'CV, EA, TI, AW, MW2, CaV, HC algorithm
-                        If sInputLine.Contains(":") Then
-                            parts = sInputLine.Split(":") 'Splited string (0 = hash code, 1 = path/target)
-                            source = sel_url & parts(0) & "." & ext 'serverroot/ + Hashcode + . + ext
-                            target = Root & parts(1).Replace("/", "\") 'Root + path/target
+                    Case 0, 6, 7 'CV, CaV, HC algorithm
+                        If sInputLine.Contains("#") Then
+                            parts = sInputLine.Split("#") 'Splited string (0 => path/hash, 1 => filename)
+                            source = sel_url & parts(0).Substring(parts(0).LastIndexOf("/") + 1) 'serverroot/ + hash
+                            target = Root & parts(0).Substring(0, parts(0).LastIndexOf("/") + 1).Replace("/", "\") + parts(1) 'Root + path + filename
                         Else
                             source = cv_url2 & sInputLine
                             target = Root & sInputLine.Replace("/", "\")
@@ -241,19 +224,11 @@ Public Class Form1
                         Directory.CreateDirectory(dir) 'it will be created.
                     End If
 
-                    Try 'WEBCLIENT
-                        Dim wc As New WebClient
-                        wc.Credentials = New NetworkCredential(username, pwd)
-                        wc.DownloadFile(source, target)
-                    Catch ex As Exception
-                        MsgBox(ex.Message & vbNewLine & source)
-                    End Try
-
-                    If File.Exists(target) Then
-                        Counter1 += 1 'Count as successful download
-                    Else
-                        Counter4 += 1 'Count as error download
-                    End If
+                    Dim FD As New ASQS.FileData
+                    FD.URL = source
+                    FD.SaveTo = target
+                    MC.Add(FD)
+                    MC.RunList()
                 Else
                     'MsgBox("Skipping, file exists.")
                     Counter2 += 1 'Count as skipped download
@@ -267,28 +242,53 @@ Public Class Form1
                 'MsgBox("CancellationPending was set True.")
                 Phase = "2"
                 e.Cancel = True
+                GC.Collect()
+                MC.AutoDownload = False
+                objWriter.Close()
                 Exit Sub
             End If
 
             sInputLine = srFileReader.ReadLine()
         Loop
-        Phase = "3"
+        Phase = "5"
     End Sub
- 
+
+    Private Sub MC_FileError(ByVal sender As Object, ByVal e As ASQS.ManagerClass.DownloadErrorArgs) Handles MC.FileError
+        Counter4 += 1 'Count as error download
+        If Not objWriter.BaseStream Is Nothing Then
+            objWriter.Write(e.Exception.Message & vbNewLine)
+        End If
+    End Sub
+
+    Private Sub MC_ProgressFinished(ByVal sender As Object, ByVal e As ASQS.ManagerClass.FileCompletionArgs) Handles MC.ProgressFinished
+        Counter1 += 1 'Count as successful download
+    End Sub
+
     Private Sub Timer1_Tick(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles Timer1.Tick
         Label8.Text = Counter1
         Label7.Text = Counter2
         Label11.Text = Counter4
-        Dim sum As Integer = Counter1 + Counter2 + Counter4
-        Dim num As Integer = sum * 100 / CInt(Label12.Text)
-        Label10.Text = num.ToString & "% (" & sum & ")"
+        Dim queue As Integer = MC.CurrentDownloadList.Count
+        Label5.Text = queue
+        Dim active As Integer = MC.CurrentDownloads
+        Label6.Text = active
+        Dim progress As Integer = Counter1 + Counter2 + Counter4
+        Dim total As Integer = CInt(Label12.Text)
+        Dim pct As Integer = progress * 100 / total
+        Label10.Text = progress & " (" & pct.ToString & "%)"
+
+        If Phase = 5 And queue = 0 And active = 0 Then
+            Phase = 3
+            Finish()
+            objWriter.Close()
+        End If
     End Sub
 
     Private Sub LinkLabel1_LinkClicked(ByVal sender As System.Object, ByVal e As System.Windows.Forms.LinkLabelLinkClickedEventArgs) Handles LinkLabel1.LinkClicked
         Process.Start("http://cityville.wikia.com/wiki/User:Mihapro")
     End Sub
 
-    Private Sub Menu_Click(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles mCV.Click, mEA.Click, mTI.Click, mFV.Click, mAW.Click, mMW2.Click, mMW2.Click, mCaV.Click, mHC.Click, mFV2.Click
+    Private Sub Menu_Click(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles mCV.Click, mFV.Click, mCaV.Click, mHC.Click, mFV2.Click
         Dim obj As ToolStripMenuItem = sender
         Select Case obj.Name
             Case "mCV"
@@ -328,36 +328,12 @@ Public Class Form1
                 btnHash.Text = "HashCV.txt"
                 tbHash.Text = My.Settings.HashCV
                 tbDest.Text = My.Settings.DestCV
-            Case 1 'Empires & Allies
-                color1 = Color.DodgerBlue
-                color2 = Color.Orange
-                btnHash.Text = "HashEA.txt"
-                tbHash.Text = My.Settings.HashEA
-                tbDest.Text = My.Settings.DestEA
-            Case 2 'Treasure Isle
-                color1 = Color.DodgerBlue
-                color2 = Color.LimeGreen
-                btnHash.Text = "HashTI.txt"
-                tbHash.Text = My.Settings.HashTI
-                tbDest.Text = My.Settings.DestTI
             Case 3 'FarmVille
                 color1 = Color.SeaGreen
                 color2 = Color.Peru
                 btnHash.Text = "HashFV.txt"
                 tbHash.Text = My.Settings.HashFV
                 tbDest.Text = My.Settings.DestFV
-            Case 4 'Adventure World
-                color1 = Color.Peru
-                color2 = Color.Chocolate
-                btnHash.Text = "HashAW.txt"
-                tbHash.Text = My.Settings.HashAW
-                tbDest.Text = My.Settings.DestAW
-            Case 5 'Mafia Wars 2
-                color1 = Color.DodgerBlue
-                color2 = Color.DarkGray
-                btnHash.Text = "HashMW2.txt"
-                tbHash.Text = My.Settings.HashAW
-                tbDest.Text = My.Settings.DestAW
             Case 6 'CastleVille
                 color1 = Color.BlueViolet
                 color2 = Color.Orange
@@ -387,27 +363,15 @@ Public Class Form1
 
     Private Sub ColorMenu(ByVal i As Integer)
         mCV.ForeColor = Color.Black
-        mEA.ForeColor = Color.Black
-        mTI.ForeColor = Color.Black
         mFV.ForeColor = Color.Black
-        mAW.ForeColor = Color.Black
-        mMW2.ForeColor = Color.Black
         mCaV.ForeColor = Color.Black
         mHC.ForeColor = Color.Black
         mFV2.ForeColor = Color.Black
         Select Case i
             Case 0
                 mCV.ForeColor = Color.White
-            Case 1
-                mEA.ForeColor = Color.White
-            Case 2
-                mTI.ForeColor = Color.White
             Case 3
                 mFV.ForeColor = Color.White
-            Case 4
-                mAW.ForeColor = Color.White
-            Case 5
-                mMW2.ForeColor = Color.White
             Case 6
                 mCaV.ForeColor = Color.White
             Case 7
@@ -478,11 +442,13 @@ Public Class Form1
     End Sub
 
     Private Sub ResetStats()
-        Label8.Text = "0"
+        Label5.Text = "0"
+        Label6.Text = "0"
         Label7.Text = "0"
+        Label8.Text = "0"
         Label11.Text = "0"
         Label12.Text = "0"
-        Label10.Text = "0% (0)"
+        Label10.Text = "0 (0%)"
     End Sub
 
     Private Sub cbImages_CheckedChanged(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles cbImages.CheckedChanged
@@ -490,7 +456,7 @@ Public Class Form1
         My.Settings.Save()
     End Sub
 
-    Private Sub BackgroundWorker1_RunWorkerCompleted(ByVal sender As Object, ByVal e As System.ComponentModel.RunWorkerCompletedEventArgs) Handles BackgroundWorker1.RunWorkerCompleted
+    Friend Sub Finish()
         btnStart.Text = "START"
         EnableUI(True)
         btnStart.Image = My.Resources.Flag_Green
