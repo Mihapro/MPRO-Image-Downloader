@@ -2,15 +2,12 @@
 Imports System.IO
 Imports System.Net
 
-Imports ASQS
-Imports ASQS.FileData
-
 Public Class Form1
-    Private WithEvents MC As New ASQS.ManagerClass
     Dim Phase As Integer = 0
     Dim Counter1 As Integer = 0 'Successfully downloaded images
     Dim Counter2 As Integer = 0 'Skipped downloads (same name or already exists)
     Dim Counter4 As Integer = 0 'Error
+    Dim errorlog As String 'error.log file path
     Dim objWriter As System.IO.StreamWriter
 
     Private Sub btnHash_Click(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles btnHash.Click
@@ -55,8 +52,7 @@ Public Class Form1
                         line = obj.ReadLine
                     Loop
                     obj.Close()
-                    Label12.Text = count
-
+                    Label12.Text = count.ToString
 
                     BackgroundWorker1.RunWorkerAsync()
                 End If
@@ -107,9 +103,6 @@ Public Class Form1
     End Sub
 
     Private Sub BackgroundWorker1_DoWork(ByVal sender As System.Object, ByVal e As System.ComponentModel.DoWorkEventArgs) Handles BackgroundWorker1.DoWork
-        MC.MaxDownloads = 20
-        MC.AutoDownload = True
-
         'CityVille
         Dim cv_url As String = "http://assets.cityville.zynga.com/hashed/"
         Dim cv_url2 As String = "https://zynga1-a.akamaihd.net/city/static/"
@@ -152,7 +145,7 @@ Public Class Form1
             Directory.CreateDirectory(Root) 'it will be created.
         End If
 
-        objWriter = New System.IO.StreamWriter(tbDest.Text & "\" & sel_destprefix & "\error.log")
+        errorlog = tbDest.Text & "\" & sel_destprefix & "\" & DateTime.Now.ToString("yyyy.MM.dd_HH.mm.ss") & "_" & sel_destprefix.Substring(0, sel_destprefix.Length - 1).ToLower() & "_error.log"
 
         Dim srFileReader As StreamReader
         Dim sInputLine As String
@@ -177,7 +170,7 @@ Public Class Form1
                 Continue Do
             End If
 
-            Dim ext As String = IIf(sInputLine.Contains("."), sInputLine.Split(".").Last, "")
+            Dim ext As String = CStr(IIf(sInputLine.Contains("."), sInputLine.Split(CChar(".")).Last, ""))
             If image_extensions.Contains(ext) Or Not My.Settings.OnlyImages Then
                 Dim parts As String()
                 Dim target As String
@@ -185,7 +178,7 @@ Public Class Form1
                 Select Case My.Settings.GameIndex
                     Case 0, 6, 7 'CV, CaV, HC algorithm
                         If sInputLine.Contains("#") Then
-                            parts = sInputLine.Split("#") 'Splited string (0 => path/hash, 1 => filename)
+                            parts = sInputLine.Split(CChar("#")) 'Splited string (0 => path/hash, 1 => filename)
                             source = sel_url & parts(0).Substring(parts(0).LastIndexOf("/") + 1) 'serverroot/ + hash
                             target = Root & parts(0).Substring(0, parts(0).LastIndexOf("/") + 1).Replace("/", "\") + parts(1) 'Root + path + filename
                         Else
@@ -193,7 +186,7 @@ Public Class Form1
                             target = Root & sInputLine.Replace("/", "\")
                         End If
                     Case 3 'FV algorithm
-                        parts = sInputLine.Split(":") 'Splited string (0 = path/target, 1 = web path/source)
+                        parts = sInputLine.Split(CChar(":")) 'Splited string (0 = path/target, 1 = web path/source)
                         source = sel_url & parts(0) & "." & ext 'serverroot/ + Hashcode + . + ext
                         target = Root & parts(0).Replace("/", "\") 'Root + path/target
                     Case 8 'FV2 algorithm (simple urls)
@@ -213,7 +206,7 @@ Public Class Form1
                         source = sInputLine
                         target = Root & sInputLine.Substring(sInputLine.IndexOf("/farm2/") + 7).Replace("/", "\")
                     Case Else
-                        Phase = "5"
+                        Phase = 4
                         e.Cancel = True
                         Exit Sub
                 End Select
@@ -224,11 +217,9 @@ Public Class Form1
                         Directory.CreateDirectory(dir) 'it will be created.
                     End If
 
-                    Dim FD As New ASQS.FileData
-                    FD.URL = source
-                    FD.SaveTo = target
-                    MC.Add(FD)
-                    MC.RunList()
+                    Dim WC As New WebClient
+                    AddHandler WC.DownloadFileCompleted, AddressOf WC_DownloadComplete
+                    WC.DownloadFileAsync(New System.Uri(source), target)
                 Else
                     'MsgBox("Skipping, file exists.")
                     Counter2 += 1 'Count as skipped download
@@ -240,47 +231,63 @@ Public Class Form1
 
             If BackgroundWorker1.CancellationPending = True Then
                 'MsgBox("CancellationPending was set True.")
-                Phase = "2"
+                Phase = 2
+                Timer1.Stop()
+                objWriter.Close()
                 e.Cancel = True
                 GC.Collect()
-                MC.AutoDownload = False
-                objWriter.Close()
                 Exit Sub
             End If
 
             sInputLine = srFileReader.ReadLine()
         Loop
-        Phase = "5"
+        Phase = 5
     End Sub
 
-    Private Sub MC_FileError(ByVal sender As Object, ByVal e As ASQS.ManagerClass.DownloadErrorArgs) Handles MC.FileError
-        Counter4 += 1 'Count as error download
-        If Not objWriter.BaseStream Is Nothing Then
-            objWriter.Write(e.Exception.Message & vbNewLine)
+    Private Sub WC_ProgressChanged(ByVal sender As Object, ByVal e As System.ComponentModel.AsyncCompletedEventArgs)
+
+    End Sub
+
+    Private Sub WC_DownloadComplete(ByVal sender As Object, ByVal e As System.ComponentModel.AsyncCompletedEventArgs)
+        If e.Error IsNot Nothing Then
+            Counter4 += 1 'Count as error download
+            If objWriter Is Nothing Then
+                objWriter = New System.IO.StreamWriter(errorlog)
+            End If
+            If Not objWriter.BaseStream Is Nothing Then
+                objWriter.Write(e.Error.Message & vbNewLine)
+            End If
+        Else
+            Counter1 += 1 'Count as successful download
         End If
+        GC.Collect()
     End Sub
 
-    Private Sub MC_ProgressFinished(ByVal sender As Object, ByVal e As ASQS.ManagerClass.FileCompletionArgs) Handles MC.ProgressFinished
-        Counter1 += 1 'Count as successful download
-    End Sub
+    Private Sub UpdateStats(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles Timer1.Tick
+        RichTextBox1.Clear()
+        RichTextBox1.SelectionColor = Color.LimeGreen
+        RichTextBox1.AppendText(CStr(Counter1))
+        RichTextBox1.SelectionColor = Color.Black
+        RichTextBox1.AppendText(" / ")
+        RichTextBox1.SelectionColor = Color.Gold
+        RichTextBox1.AppendText(CStr(Counter2))
+        RichTextBox1.SelectionColor = Color.Black
+        RichTextBox1.AppendText(" / ")
+        RichTextBox1.SelectionColor = Color.Crimson
+        RichTextBox1.AppendText(CStr(Counter4))
 
-    Private Sub Timer1_Tick(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles Timer1.Tick
-        Label8.Text = Counter1
-        Label7.Text = Counter2
-        Label11.Text = Counter4
-        Dim queue As Integer = MC.CurrentDownloadList.Count
-        Label5.Text = queue
-        Dim active As Integer = MC.CurrentDownloads
-        Label6.Text = active
         Dim progress As Integer = Counter1 + Counter2 + Counter4
         Dim total As Integer = CInt(Label12.Text)
-        Dim pct As Integer = progress * 100 / total
+        Dim pct As Integer = CInt(progress * 100 / total)
         Label10.Text = progress & " (" & pct.ToString & "%)"
 
-        If Phase = 5 And queue = 0 And active = 0 Then
+        If Phase = 5 Then
+            Timer1.Stop()
+            If Not objWriter Is Nothing Then
+                objWriter.Close()
+            End If
             Phase = 3
             Finish()
-            objWriter.Close()
         End If
     End Sub
 
@@ -289,7 +296,7 @@ Public Class Form1
     End Sub
 
     Private Sub Menu_Click(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles mCV.Click, mFV.Click, mCaV.Click, mHC.Click, mFV2.Click
-        Dim obj As ToolStripMenuItem = sender
+        Dim obj As ToolStripMenuItem = CType(sender, ToolStripMenuItem)
         Select Case obj.Name
             Case "mCV"
                 ToggleGame(0)
@@ -359,6 +366,7 @@ Public Class Form1
         btnDest.BackColor = color2
         btnStart.BackColor = color2
         Me.BackColor = color1
+        RichTextBox1.BackColor = color1
     End Sub
 
     Private Sub ColorMenu(ByVal i As Integer)
@@ -418,7 +426,7 @@ Public Class Form1
     End Sub
 
     Private Sub NI_BalloonTipClicked(ByVal sender As Object, ByVal e As System.EventArgs) Handles NI.BalloonTipClicked
-        If Phase = "0" Then
+        If Phase = 0 Then
             Me.Show()
             Me.WindowState = FormWindowState.Normal
         End If
@@ -431,7 +439,7 @@ Public Class Form1
     Private Sub Form1_Resize(ByVal sender As Object, ByVal e As System.EventArgs) Handles Me.Resize
         If Me.WindowState = FormWindowState.Minimized Then
             Me.Hide()
-            Phase = "1"
+            Phase = 1
             NI.ShowBalloonTip(5000, "MPRO ID running in the background!", "MPRO Image Downloader is running in the background. Right-click the icon in the system tray and select 'Exit' to end the program.", ToolTipIcon.Info)
         End If
     End Sub
@@ -442,11 +450,17 @@ Public Class Form1
     End Sub
 
     Private Sub ResetStats()
-        Label5.Text = "0"
-        Label6.Text = "0"
-        Label7.Text = "0"
-        Label8.Text = "0"
-        Label11.Text = "0"
+        RichTextBox1.Clear()
+        RichTextBox1.SelectionColor = Color.LimeGreen
+        RichTextBox1.AppendText("0")
+        RichTextBox1.SelectionColor = Color.Black
+        RichTextBox1.AppendText(" / ")
+        RichTextBox1.SelectionColor = Color.Gold
+        RichTextBox1.AppendText("0")
+        RichTextBox1.SelectionColor = Color.Black
+        RichTextBox1.AppendText(" / ")
+        RichTextBox1.SelectionColor = Color.Crimson
+        RichTextBox1.AppendText("0")
         Label12.Text = "0"
         Label10.Text = "0 (0%)"
     End Sub
@@ -463,15 +477,15 @@ Public Class Form1
         Timer1.Enabled = False
 
         '3 = completed, 2 = cancelled
-        If Phase = "3" Then
+        If Phase = 3 Then
             NI.ShowBalloonTip(4000, "Downloading finished", "Click here to see results.", ToolTipIcon.Info)
-        ElseIf Phase = "4" Then
+        ElseIf Phase = 4 Then
             NI.ShowBalloonTip(4000, "Downloading aborted", "Game not selected.", ToolTipIcon.Info)
-        ElseIf Phase = "2" Then
+        ElseIf Phase = 2 Then
             NI.ShowBalloonTip(4000, "Downloading cancelled", "You have cancelled downloading.", ToolTipIcon.Info)
         Else
             NI.ShowBalloonTip(4000, "Downloading stopped", "Downloading has stopped for unknown reason.", ToolTipIcon.Info)
         End If
-        Phase = "0"
+        Phase = 0
     End Sub
 End Class
