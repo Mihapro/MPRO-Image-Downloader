@@ -37,6 +37,11 @@ Partial Class Form1
         Me.Label12 = New System.Windows.Forms.Label()
         Me.tbHash = New System.Windows.Forms.TextBox()
         Me.GameMenu = New System.Windows.Forms.MenuStrip()
+        Me.mCV = New System.Windows.Forms.ToolStripMenuItem()
+        Me.mFV = New System.Windows.Forms.ToolStripMenuItem()
+        Me.mCaV = New System.Windows.Forms.ToolStripMenuItem()
+        Me.mHC = New System.Windows.Forms.ToolStripMenuItem()
+        Me.mFV2 = New System.Windows.Forms.ToolStripMenuItem()
         Me.Label1 = New System.Windows.Forms.Label()
         Me.NI = New System.Windows.Forms.NotifyIcon(Me.components)
         Me.ContextMenuStrip1 = New System.Windows.Forms.ContextMenuStrip(Me.components)
@@ -46,11 +51,6 @@ Partial Class Form1
         Me.LinkLabel1 = New System.Windows.Forms.LinkLabel()
         Me.RichTextBox1 = New System.Windows.Forms.RichTextBox()
         Me.btnStart = New System.Windows.Forms.Button()
-        Me.mCV = New System.Windows.Forms.ToolStripMenuItem()
-        Me.mFV = New System.Windows.Forms.ToolStripMenuItem()
-        Me.mCaV = New System.Windows.Forms.ToolStripMenuItem()
-        Me.mHC = New System.Windows.Forms.ToolStripMenuItem()
-        Me.mFV2 = New System.Windows.Forms.ToolStripMenuItem()
         Me.GameMenu.SuspendLayout()
         Me.ContextMenuStrip1.SuspendLayout()
         Me.SuspendLayout()
@@ -172,6 +172,41 @@ Partial Class Form1
         Me.GameMenu.TabIndex = 19
         Me.GameMenu.Text = "MenuStrip1"
         '
+        'mCV
+        '
+        Me.mCV.Image = CType(resources.GetObject("mCV.Image"), System.Drawing.Image)
+        Me.mCV.Name = "mCV"
+        Me.mCV.Size = New System.Drawing.Size(75, 20)
+        Me.mCV.Text = "CityVille"
+        '
+        'mFV
+        '
+        Me.mFV.Image = CType(resources.GetObject("mFV.Image"), System.Drawing.Image)
+        Me.mFV.Name = "mFV"
+        Me.mFV.Size = New System.Drawing.Size(80, 20)
+        Me.mFV.Text = "FarmVille"
+        '
+        'mCaV
+        '
+        Me.mCaV.Image = CType(resources.GetObject("mCaV.Image"), System.Drawing.Image)
+        Me.mCaV.Name = "mCaV"
+        Me.mCaV.Size = New System.Drawing.Size(85, 20)
+        Me.mCaV.Text = "CastleVille"
+        '
+        'mHC
+        '
+        Me.mHC.Image = CType(resources.GetObject("mHC.Image"), System.Drawing.Image)
+        Me.mHC.Name = "mHC"
+        Me.mHC.Size = New System.Drawing.Size(120, 20)
+        Me.mHC.Text = "Hidden Chronicles"
+        '
+        'mFV2
+        '
+        Me.mFV2.Image = CType(resources.GetObject("mFV2.Image"), System.Drawing.Image)
+        Me.mFV2.Name = "mFV2"
+        Me.mFV2.Size = New System.Drawing.Size(88, 20)
+        Me.mFV2.Text = "FarmVille 2"
+        '
         'Label1
         '
         Me.Label1.AutoSize = True
@@ -239,7 +274,7 @@ Partial Class Form1
         Me.LinkLabel1.Size = New System.Drawing.Size(488, 21)
         Me.LinkLabel1.TabIndex = 18
         Me.LinkLabel1.TabStop = True
-        Me.LinkLabel1.Text = "MPRO Image Downloader (version 6.4.1) by Mihapro"
+        Me.LinkLabel1.Text = "MPRO Image Downloader (version 6.4.2) by Mihapro"
         Me.LinkLabel1.TextAlign = System.Drawing.ContentAlignment.MiddleCenter
         Me.LinkLabel1.UseCompatibleTextRendering = True
         '
@@ -266,41 +301,6 @@ Partial Class Form1
         Me.btnStart.TextAlign = System.Drawing.ContentAlignment.MiddleRight
         Me.btnStart.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText
         Me.btnStart.UseVisualStyleBackColor = False
-        '
-        'mCV
-        '
-        Me.mCV.Image = CType(resources.GetObject("mCV.Image"), System.Drawing.Image)
-        Me.mCV.Name = "mCV"
-        Me.mCV.Size = New System.Drawing.Size(75, 20)
-        Me.mCV.Text = "CityVille"
-        '
-        'mFV
-        '
-        Me.mFV.Image = CType(resources.GetObject("mFV.Image"), System.Drawing.Image)
-        Me.mFV.Name = "mFV"
-        Me.mFV.Size = New System.Drawing.Size(80, 20)
-        Me.mFV.Text = "FarmVille"
-        '
-        'mCaV
-        '
-        Me.mCaV.Image = CType(resources.GetObject("mCaV.Image"), System.Drawing.Image)
-        Me.mCaV.Name = "mCaV"
-        Me.mCaV.Size = New System.Drawing.Size(85, 20)
-        Me.mCaV.Text = "CastleVille"
-        '
-        'mHC
-        '
-        Me.mHC.Image = CType(resources.GetObject("mHC.Image"), System.Drawing.Image)
-        Me.mHC.Name = "mHC"
-        Me.mHC.Size = New System.Drawing.Size(120, 20)
-        Me.mHC.Text = "Hidden Chronicles"
-        '
-        'mFV2
-        '
-        Me.mFV2.Image = CType(resources.GetObject("mFV2.Image"), System.Drawing.Image)
-        Me.mFV2.Name = "mFV2"
-        Me.mFV2.Size = New System.Drawing.Size(88, 20)
-        Me.mFV2.Text = "FarmVille 2"
         '
         'Form1
         '

@@ -104,39 +104,40 @@ Public Class Form1
 
     Private Sub BackgroundWorker1_DoWork(ByVal sender As System.Object, ByVal e As System.ComponentModel.DoWorkEventArgs) Handles BackgroundWorker1.DoWork
         'CityVille
-        Dim cv_url As String = "http://assets.cityville.zynga.com/hashed/"
-        Dim cv_url2 As String = "https://zynga1-a.akamaihd.net/city/static/"
+        Dim cv_urls() As String = {"http://cityville-zc2.assets4.zgncdn.com/static/", "https://zynga1-a.akamaihd.net/city-zc2/static/assets/",
+                                "http://assets.cityville.zynga.com/hashed/", "https://zynga1-a.akamaihd.net/city/static/"}
         Dim cv_destprefix As String = "CityVille\"
         'FarmVille              old: http://static-0.farmville.com/admin-beta/hashed/")
-        Dim fv_url As String = "http://static-0.farmville.zgncdn.com/assets/hashed/"
+        Dim fv_urls() As String = {"http://static-0.farmville.zgncdn.com/assets/hashed/"}
         Dim fv_destprefix As String = "FarmVille\"
         'CastleVille
-        Dim cav_url As String = "http://assets.castle.zgncdn.com/hashed/"
+        Dim cav_urls() As String = {"http://assets.castle.zgncdn.com/hashed/"}
         Dim cav_destprefix As String = "CastleVille\"
         'Hidden Chronicles
-        Dim hc_url As String = "http://hog.assets1.zgncdn.com/hashed/"
+        Dim hc_urls() As String = {"http://hog.assets1.zgncdn.com/hashed/"}
         Dim hc_destprefix As String = "Hidden Chronicles\"
         'FarmVille 2
         Dim fv2_urls() As String = {"https://zynga1-a.akamaihd.net/farm2/", "http://zynga1-a.akamaihd.net/farm2/", "http://zynga2-a.akamaihd.net/farm2/",
                                     "http://zynga3-a.akamaihd.net/farm2/", "http://zynga4-a.akamaihd.net/farm2/"}
         Dim fv2_destprefix As String = "FarmVille 2\"
 
-        Dim sel_url As String = ""
+        Dim sel_urls() As String
         Dim sel_destprefix As String = ""
         Select Case My.Settings.GameIndex
             Case 0 'CityVille
-                sel_url = cv_url
+                sel_urls = cv_urls
                 sel_destprefix = cv_destprefix
             Case 3 'FarmVille
-                sel_url = fv_url
+                sel_urls = fv_urls
                 sel_destprefix = fv_destprefix
             Case 6 'CastleVille
-                sel_url = cav_url
+                sel_urls = cav_urls
                 sel_destprefix = cav_destprefix
             Case 7 'Hidden Chronicles
-                sel_url = hc_url
+                sel_urls = hc_urls
                 sel_destprefix = hc_destprefix
             Case 8 'FarmVille 2
+                sel_urls = fv2_urls
                 sel_destprefix = fv2_destprefix
         End Select
 
@@ -179,15 +180,15 @@ Public Class Form1
                     Case 0, 6, 7 'CV, CaV, HC algorithm
                         If sInputLine.Contains("#") Then
                             parts = sInputLine.Split(CChar("#")) 'Splited string (0 => path/hash, 1 => filename)
-                            source = sel_url & parts(0).Substring(parts(0).LastIndexOf("/") + 1) 'serverroot/ + hash
+                            source = parts(0).Substring(parts(0).LastIndexOf("/") + 1) 'serverroot/ + hash
                             target = Root & parts(0).Substring(0, parts(0).LastIndexOf("/") + 1).Replace("/", "\") + parts(1) 'Root + path + filename
                         Else
-                            source = cv_url2 & sInputLine
+                            source = sInputLine
                             target = Root & sInputLine.Replace("/", "\")
                         End If
                     Case 3 'FV algorithm
                         parts = sInputLine.Split(CChar(":")) 'Splited string (0 = path/target, 1 = web path/source)
-                        source = sel_url & parts(0) & "." & ext 'serverroot/ + Hashcode + . + ext
+                        source = parts(0) & "." & ext 'serverroot/ + Hashcode + . + ext
                         target = Root & parts(0).Replace("/", "\") 'Root + path/target
                     Case 8 'FV2 algorithm (simple urls)
                         Dim valid As Boolean = False
@@ -211,6 +212,31 @@ Public Class Form1
                         Exit Sub
                 End Select
 
+                'Check for a valid url
+                Dim found As Boolean = False
+                For Each url As String In sel_urls
+                    Dim uri As New System.Uri(url & source)
+                    Dim req As System.Net.WebRequest
+                    req = System.Net.WebRequest.Create(uri)
+                    Dim resp As System.Net.WebResponse
+                    Try
+                        resp = req.GetResponse()
+                        resp.Close()
+                        req = Nothing
+                        Found = True
+                        source = url & source
+                        Exit For
+                    Catch ex As Exception
+                        Continue For
+                    End Try
+                Next
+
+                If Not found Then
+                    Counter4 += 1 'Count as error
+                    sInputLine = srFileReader.ReadLine()
+                    Continue Do
+                End If
+
                 If Not File.Exists(target) Then
                     Dim dir As String = target.Substring(0, target.LastIndexOf("\")) 'Directory
                     If Not Directory.Exists(dir) Then  'If directory does not exist,
@@ -233,7 +259,9 @@ Public Class Form1
                 'MsgBox("CancellationPending was set True.")
                 Phase = 2
                 Timer1.Stop()
-                objWriter.Close()
+                If Not objWriter Is Nothing Then
+                    objWriter.Close()
+                End If
                 e.Cancel = True
                 GC.Collect()
                 Exit Sub
