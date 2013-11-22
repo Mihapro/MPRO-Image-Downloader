@@ -131,7 +131,7 @@ Partial Class Form1
         Me.Label10.AutoSize = True
         Me.Label10.BackColor = System.Drawing.Color.Transparent
         Me.Label10.ForeColor = System.Drawing.Color.Blue
-        Me.Label10.Location = New System.Drawing.Point(187, 92)
+        Me.Label10.Location = New System.Drawing.Point(187, 97)
         Me.Label10.Name = "Label10"
         Me.Label10.Size = New System.Drawing.Size(35, 13)
         Me.Label10.TabIndex = 15
@@ -142,7 +142,7 @@ Partial Class Form1
         Me.Label12.AutoSize = True
         Me.Label12.BackColor = System.Drawing.Color.Transparent
         Me.Label12.ForeColor = System.Drawing.Color.Purple
-        Me.Label12.Location = New System.Drawing.Point(3, 91)
+        Me.Label12.Location = New System.Drawing.Point(3, 97)
         Me.Label12.Name = "Label12"
         Me.Label12.Size = New System.Drawing.Size(13, 13)
         Me.Label12.TabIndex = 16
@@ -274,7 +274,7 @@ Partial Class Form1
         Me.LinkLabel1.Size = New System.Drawing.Size(488, 21)
         Me.LinkLabel1.TabIndex = 18
         Me.LinkLabel1.TabStop = True
-        Me.LinkLabel1.Text = "MPRO Image Downloader (version 6.4.2) by Mihapro"
+        Me.LinkLabel1.Text = "MPRO Image Downloader (version 6.4.3) by Mihapro"
         Me.LinkLabel1.TextAlign = System.Drawing.ContentAlignment.MiddleCenter
         Me.LinkLabel1.UseCompatibleTextRendering = True
         '
@@ -282,7 +282,7 @@ Partial Class Form1
         '
         Me.RichTextBox1.BackColor = System.Drawing.Color.DodgerBlue
         Me.RichTextBox1.BorderStyle = System.Windows.Forms.BorderStyle.None
-        Me.RichTextBox1.Location = New System.Drawing.Point(65, 91)
+        Me.RichTextBox1.Location = New System.Drawing.Point(65, 97)
         Me.RichTextBox1.Name = "RichTextBox1"
         Me.RichTextBox1.Size = New System.Drawing.Size(115, 15)
         Me.RichTextBox1.TabIndex = 30

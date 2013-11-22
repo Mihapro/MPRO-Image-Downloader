@@ -4,9 +4,10 @@ Imports System.Net
 
 Public Class Form1
     Dim Phase As Integer = 0
-    Dim Counter1 As Integer = 0 'Successfully downloaded images
-    Dim Counter2 As Integer = 0 'Skipped downloads (same name or already exists)
-    Dim Counter4 As Integer = 0 'Error
+    Dim Total As Long = 0
+    Dim Counter1 As Long = 0 'Successfully downloaded images
+    Dim Counter2 As Long = 0 'Skipped downloads (same name or already exists)
+    Dim Counter4 As Long = 0 'Error
     Dim errorlog As String 'error.log file path
     Dim objWriter As System.IO.StreamWriter
 
@@ -42,17 +43,17 @@ Public Class Form1
                     Counter4 = 0
                     Timer1.Enabled = True
 
-                    Dim count As Integer = 0
+                    Total = 0
                     Dim obj As New StreamReader(tbHash.Text)
                     Dim line As String = obj.ReadLine
                     Do Until line Is Nothing
                         If line.Trim().Length > 0 Then
-                            count += 1
+                            Total += 1
                         End If
                         line = obj.ReadLine
                     Loop
                     obj.Close()
-                    Label12.Text = count.ToString
+                    Label12.Text = Total.ToString()
 
                     BackgroundWorker1.RunWorkerAsync()
                 End If
@@ -304,10 +305,9 @@ Public Class Form1
         RichTextBox1.SelectionColor = Color.Crimson
         RichTextBox1.AppendText(CStr(Counter4))
 
-        Dim progress As Integer = Counter1 + Counter2 + Counter4
-        Dim total As Integer = CInt(Label12.Text)
-        Dim pct As Integer = CInt(progress * 100 / total)
-        Label10.Text = progress & " (" & pct.ToString & "%)"
+        Dim progress As Long = Counter1 + Counter2 + Counter4
+        Dim pct As Long = CLng(progress * 100 / Total)
+        Label10.Text = progress.ToString() & " (" & pct.ToString() & "%)"
 
         If Phase = 5 Then
             Timer1.Stop()
