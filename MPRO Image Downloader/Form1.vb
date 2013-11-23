@@ -1,6 +1,7 @@
 ﻿Imports System
 Imports System.IO
 Imports System.Net
+Imports System.Globalization
 
 Public Class Form1
     Dim Phase As Integer = 0
@@ -41,7 +42,6 @@ Public Class Form1
                     Counter1 = 0
                     Counter2 = 0
                     Counter4 = 0
-                    Timer1.Enabled = True
 
                     Total = 0
                     Dim obj As New StreamReader(tbHash.Text)
@@ -55,6 +55,7 @@ Public Class Form1
                     obj.Close()
                     Label12.Text = Total.ToString()
 
+                    Timer1.Enabled = True
                     BackgroundWorker1.RunWorkerAsync()
                 End If
             Case "CANCEL"
@@ -213,29 +214,34 @@ Public Class Form1
                         Exit Sub
                 End Select
 
-                'Check for a valid url
-                Dim found As Boolean = False
-                For Each url As String In sel_urls
-                    Dim uri As New System.Uri(url & source)
-                    Dim req As System.Net.WebRequest
-                    req = System.Net.WebRequest.Create(uri)
-                    Dim resp As System.Net.WebResponse
-                    Try
-                        resp = req.GetResponse()
-                        resp.Close()
-                        req = Nothing
-                        Found = True
-                        source = url & source
-                        Exit For
-                    Catch ex As Exception
-                        Continue For
-                    End Try
-                Next
+                If CBMultipleURL.Checked = True Then
+                    'Check for a valid url in sel_urls
+                    Dim found As Boolean = False
+                    For Each url As String In sel_urls
+                        Dim uri As New System.Uri(url & source)
+                        Dim req As System.Net.WebRequest
+                        req = System.Net.WebRequest.Create(uri)
+                        Dim resp As System.Net.WebResponse
+                        Try
+                            resp = req.GetResponse()
+                            resp.Close()
+                            req = Nothing
+                            found = True
+                            source = url & source
+                            Exit For
+                        Catch ex As Exception
+                            Continue For
+                        End Try
+                    Next
 
-                If Not found Then
-                    Counter4 += 1 'Count as error
-                    sInputLine = srFileReader.ReadLine()
-                    Continue Do
+                    If Not found Then
+                        Counter4 += 1 'Count as error
+                        sInputLine = srFileReader.ReadLine()
+                        Continue Do
+                    End If
+                Else
+                    'Get the first url from sel_urls
+                    source = sel_urls(0) & source
                 End If
 
                 If Not File.Exists(target) Then
@@ -295,19 +301,19 @@ Public Class Form1
     Private Sub UpdateStats(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles Timer1.Tick
         RichTextBox1.Clear()
         RichTextBox1.SelectionColor = Color.LimeGreen
-        RichTextBox1.AppendText(CStr(Counter1))
+        RichTextBox1.AppendText(Counter1.ToString())
         RichTextBox1.SelectionColor = Color.Black
         RichTextBox1.AppendText(" / ")
         RichTextBox1.SelectionColor = Color.Gold
-        RichTextBox1.AppendText(CStr(Counter2))
+        RichTextBox1.AppendText(Counter2.ToString())
         RichTextBox1.SelectionColor = Color.Black
         RichTextBox1.AppendText(" / ")
         RichTextBox1.SelectionColor = Color.Crimson
-        RichTextBox1.AppendText(CStr(Counter4))
+        RichTextBox1.AppendText(Counter4.ToString())
 
         Dim progress As Long = Counter1 + Counter2 + Counter4
-        Dim pct As Long = CLng(progress * 100 / Total)
-        Label10.Text = progress.ToString() & " (" & pct.ToString() & "%)"
+        Dim pct As Double = CDbl(IIf(Total > 0, progress * 100 / Total, 0))
+        Label10.Text = progress.ToString() & " (" & pct.ToString("0.0", CultureInfo.InvariantCulture) & "%)"
 
         If Phase = 5 Then
             Timer1.Stop()
@@ -424,6 +430,7 @@ Public Class Form1
         btnHash.Enabled = bl
         btnDest.Enabled = bl
         cbImages.Enabled = bl
+        CBMultipleURL.Enabled = bl
     End Sub
 
     Private Sub Toggler_Click(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles Toggler.Click
