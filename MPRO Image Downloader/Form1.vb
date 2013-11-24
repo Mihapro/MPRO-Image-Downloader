@@ -148,7 +148,7 @@ Public Class Form1
             Directory.CreateDirectory(Root) 'it will be created.
         End If
 
-        errorlog = tbDest.Text & "\" & sel_destprefix & "\" & DateTime.Now.ToString("yyyy.MM.dd_HH.mm.ss") & "_" & sel_destprefix.Substring(0, sel_destprefix.Length - 1).ToLower() & "_error.log"
+        errorlog = tbDest.Text & "\" & sel_destprefix & DateTime.Now.ToString("yyyy.MM.dd_HH.mm.ss") & "_" & sel_destprefix.Substring(0, sel_destprefix.Length - 1).ToLower() & "_error.log"
 
         Dim srFileReader As StreamReader
         Dim sInputLine As String
@@ -188,6 +188,36 @@ Public Class Form1
                             source = sInputLine
                             target = Root & sInputLine.Replace("/", "\")
                         End If
+
+                        If CBMultipleURL.Checked = True Then
+                            'Check for a valid url in sel_urls
+                            Dim found As Boolean = False
+                            For Each url As String In sel_urls
+                                Dim uri As New System.Uri(url & source)
+                                Dim req As System.Net.WebRequest
+                                req = System.Net.WebRequest.Create(uri)
+                                Dim resp As System.Net.WebResponse
+                                Try
+                                    resp = req.GetResponse()
+                                    resp.Close()
+                                    req = Nothing
+                                    found = True
+                                    source = url & source
+                                    Exit For
+                                Catch ex As Exception
+                                    Continue For
+                                End Try
+                            Next
+
+                            If Not found Then
+                                Counter4 += 1 'Count as error
+                                sInputLine = srFileReader.ReadLine()
+                                Continue Do
+                            End If
+                        Else
+                            'Get the first url from sel_urls
+                            source = sel_urls(0) & source
+                        End If
                     Case 3 'FV algorithm
                         parts = sInputLine.Split(CChar(":")) 'Splited string (0 = path/target, 1 = web path/source)
                         source = parts(0) & "." & ext 'serverroot/ + Hashcode + . + ext
@@ -201,7 +231,7 @@ Public Class Form1
                             End If
                         Next
                         If Not valid Then
-                            Counter2 += 1
+                            Total -= 1
                             sInputLine = srFileReader.ReadLine()
                             Continue Do
                         End If
@@ -213,36 +243,6 @@ Public Class Form1
                         e.Cancel = True
                         Exit Sub
                 End Select
-
-                If CBMultipleURL.Checked = True Then
-                    'Check for a valid url in sel_urls
-                    Dim found As Boolean = False
-                    For Each url As String In sel_urls
-                        Dim uri As New System.Uri(url & source)
-                        Dim req As System.Net.WebRequest
-                        req = System.Net.WebRequest.Create(uri)
-                        Dim resp As System.Net.WebResponse
-                        Try
-                            resp = req.GetResponse()
-                            resp.Close()
-                            req = Nothing
-                            found = True
-                            source = url & source
-                            Exit For
-                        Catch ex As Exception
-                            Continue For
-                        End Try
-                    Next
-
-                    If Not found Then
-                        Counter4 += 1 'Count as error
-                        sInputLine = srFileReader.ReadLine()
-                        Continue Do
-                    End If
-                Else
-                    'Get the first url from sel_urls
-                    source = sel_urls(0) & source
-                End If
 
                 If Not File.Exists(target) Then
                     Dim dir As String = target.Substring(0, target.LastIndexOf("\")) 'Directory
@@ -266,6 +266,7 @@ Public Class Form1
                 'MsgBox("CancellationPending was set True.")
                 Phase = 2
                 Timer1.Stop()
+                UpdateStats()
                 If Not objWriter Is Nothing Then
                     objWriter.Close()
                 End If
@@ -298,7 +299,7 @@ Public Class Form1
         GC.Collect()
     End Sub
 
-    Private Sub UpdateStats(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles Timer1.Tick
+    Private Sub UpdateStats() Handles Timer1.Tick
         RichTextBox1.Clear()
         RichTextBox1.SelectionColor = Color.LimeGreen
         RichTextBox1.AppendText(Counter1.ToString())
@@ -313,6 +314,7 @@ Public Class Form1
 
         Dim progress As Long = Counter1 + Counter2 + Counter4
         Dim pct As Double = CDbl(IIf(Total > 0, progress * 100 / Total, 0))
+        Label12.Text = Total.ToString()
         Label10.Text = progress.ToString() & " (" & pct.ToString("0.0", CultureInfo.InvariantCulture) & "%)"
 
         If Phase = 5 Then
@@ -401,6 +403,8 @@ Public Class Form1
         btnStart.BackColor = color2
         Me.BackColor = color1
         RichTextBox1.BackColor = color1
+
+        CBMultipleURL.Enabled = CBool(gameIndex = 0)
     End Sub
 
     Private Sub ColorMenu(ByVal i As Integer)
