@@ -113,7 +113,7 @@ Public Class Form1
         Dim fv_urls() As String = {"http://static-0.farmville.zgncdn.com/assets/hashed/"}
         Dim fv_destprefix As String = "FarmVille\"
         'CastleVille
-        Dim cav_urls() As String = {"http://assets.castle.zgncdn.com/hashed/"}
+        Dim cav_urls() As String = {"http://zynga1-a.akamaihd.net/castleville/hashed/"}
         Dim cav_destprefix As String = "CastleVille\"
         'Hidden Chronicles
         Dim hc_urls() As String = {"http://hog.assets1.zgncdn.com/hashed/"}

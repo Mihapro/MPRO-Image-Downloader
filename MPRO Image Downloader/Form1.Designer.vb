@@ -275,7 +275,7 @@ Partial Class Form1
         Me.LinkLabel1.Size = New System.Drawing.Size(488, 21)
         Me.LinkLabel1.TabIndex = 18
         Me.LinkLabel1.TabStop = True
-        Me.LinkLabel1.Text = "MPRO Image Downloader (version 6.5.1) by Mihapro"
+        Me.LinkLabel1.Text = "MPRO Image Downloader (version 6.5.2) by Mihapro"
         Me.LinkLabel1.TextAlign = System.Drawing.ContentAlignment.MiddleCenter
         Me.LinkLabel1.UseCompatibleTextRendering = True
         '

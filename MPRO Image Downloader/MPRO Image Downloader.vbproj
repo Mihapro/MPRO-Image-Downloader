@@ -8,11 +8,11 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{CF44508E-BDCB-4A15-80F5-554BA10CA344}</ProjectGuid>
     <OutputType>WinExe</OutputType>
-    <StartupObject>MPRO_ID.My.MyApplication</StartupObject>
+    <StartupObject>MPRO_ID.Form1</StartupObject>
     <RootNamespace>MPRO_ID</RootNamespace>
     <AssemblyName>MPRO Image Downloader</AssemblyName>
     <FileAlignment>512</FileAlignment>
-    <MyType>WindowsForms</MyType>
+    <MyType>WindowsFormsWithCustomSubMain</MyType>
     <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <TargetFrameworkProfile>Client</TargetFrameworkProfile>
     <IsWebBootstrapper>true</IsWebBootstrapper>
@@ -86,7 +86,7 @@
     <ManifestCertificateThumbprint>30B8BBA2E76A678F694DBF0A08383CD0421C1EE4</ManifestCertificateThumbprint>
   </PropertyGroup>
   <PropertyGroup>
-    <ManifestKeyFile>CityVille tool_TemporaryKey.pfx</ManifestKeyFile>
+    <ManifestKeyFile>MPRO Image Downloader.pfx</ManifestKeyFile>
   </PropertyGroup>
   <PropertyGroup>
     <GenerateManifests>true</GenerateManifests>
@@ -161,6 +161,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
+    <None Include="MPRO Image Downloader.pfx" />
     <None Include="My Project\app.manifest">
       <SubType>Designer</SubType>
     </None>
